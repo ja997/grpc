@@ -1,0 +1,140 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+#include <cmath>
+#include <iomanip>
+
+using namespace std;
+
+struct Employee {
+    string name;
+    double salary;
+    double minMaxNorm;
+    double zScoreNorm;
+};
+
+// Function to read dataset from a CSV or text file
+vector<Employee> readFromFile(const string& filename) {
+    vector<Employee> employees;
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << filename << endl;
+        return employees;
+    }
+    string line;
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string name;
+        double salary;
+        ss >> name >> salary;
+        if (!name.empty())
+            employees.push_back({name, salary, 0.0, 0.0});
+    }
+    return employees;
+}
+
+// Function to read dataset manually
+vector<Employee> readFromUser() {
+    vector<Employee> employees;
+    int n;
+    cout << "Enter number of employees: ";
+    cin >> n;
+    for (int i = 0; i < n; i++) {
+        Employee e;
+        cout << "Enter employee name: ";
+        cin >> e.name;
+        cout << "Enter salary for " << e.name << ": ";
+        cin >> e.salary;
+        employees.push_back(e);
+    }
+    return employees;
+}
+
+// Apply Min-Max normalization
+void applyMinMax(vector<Employee>& employees) {
+    if (employees.empty()) return;
+    double minVal = employees[0].salary, maxVal = employees[0].salary;
+    for (auto& e : employees) {
+        if (e.salary < minVal) minVal = e.salary;
+        if (e.salary > maxVal) maxVal = e.salary;
+    }
+    for (auto& e : employees) {
+        e.minMaxNorm = (e.salary - minVal) / (maxVal - minVal);
+    }
+}
+
+// Apply Z-Score normalization
+void applyZScore(vector<Employee>& employees) {
+    if (employees.empty()) return;
+    double mean = 0.0, stddev = 0.0;
+    int n = employees.size();
+    for (auto& e : employees) mean += e.salary;
+    mean /= n;
+    for (auto& e : employees) stddev += pow(e.salary - mean, 2);
+    stddev = sqrt(stddev / n);
+    for (auto& e : employees) {
+        e.zScoreNorm = (e.salary - mean) / stddev;
+    }
+}
+
+// Print dataset with normalizations
+void printDataset(const vector<Employee>& employees) {
+    cout << "\nThis is Jacob’s Normalization Program\n" << endl;
+    cout << left << setw(10) << "Employee"
+         << setw(12) << "Salary"
+         << setw(15) << "MinMax"
+         << setw(15) << "Z-Score" << endl;
+    cout << string(55, '-') << endl;
+    for (auto& e : employees) {
+        cout << setw(10) << e.name
+             << setw(12) << e.salary
+             << setw(15) << fixed << setprecision(4) << e.minMaxNorm
+             << setw(15) << fixed << setprecision(4) << e.zScoreNorm
+             << endl;
+    }
+}
+
+int main() {
+    vector<Employee> employees;
+    int choice;
+    cout << "Choose input method:\n1. Read from file (TXT/CSV)\n2. Enter manually\nChoice: ";
+    cin >> choice;
+
+    if (choice == 1) {
+        string filename;
+        cout << "Enter filename: ";
+        cin >> filename;
+        employees = readFromFile(filename);
+    } else if (choice == 2) {
+        employees = readFromUser();
+    } else {
+        cout << "Invalid choice!" << endl;
+        return 1;
+    }
+
+    // Apply normalizations
+    applyMinMax(employees);
+    applyZScore(employees);
+
+    // Print results
+    printDataset(employees);
+
+    // Example calculations
+    cout << "\nSample Employee Normalizations:\n";
+    for (string target : {"C", "K", "Q"}) {
+        for (auto& e : employees) {
+            if (e.name == target)
+                cout << "Min-Max " << target << ": " << e.minMaxNorm << endl;
+        }
+    }
+    for (string target : {"D", "G", "Q"}) {
+        for (auto& e : employees) {
+            if (e.name == target)
+                cout << "Z-Score " << target << ": " << e.zScoreNorm << endl;
+        }
+    }
+
+    return 0;
+}
